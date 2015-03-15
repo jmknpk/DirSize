@@ -6,30 +6,16 @@ import java.nio.file.Files;
 import java.util.TreeSet;
 import java.util.Iterator;
 
-public class DirSize {
+public class SubDirSize {
 
 	TreeSet<DirSizeElement> list;
 
-	public DirSize() {
+	public SubDirSize() {
 		list = new TreeSet<DirSizeElement>();
 	}
 	
 	public TreeSet<DirSizeElement> getList() {
 		return list;
-	}
-	
-	public static void main(String[]args)
-	{
-		DirSize ds = new DirSize();
-		File abstractPath = new File(".");
-		File startPath = abstractPath.getAbsoluteFile();
-		long j = ds.getFileList(startPath, 0);
-		TreeSet<DirSizeElement> list = ds.getList();
-		Iterator<DirSizeElement> iter = list.descendingIterator();
-		while (iter.hasNext()) {
-			System.out.println(iter.next().getText());
-		}
-		
 	}
 	
 	public long getFileList(File curDir, long inSize) {
