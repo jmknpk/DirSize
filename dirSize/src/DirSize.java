@@ -17,13 +17,11 @@ public class DirSize {
 			abstractPath = new File(".");
 		}
 		File startPath = abstractPath.getAbsoluteFile();
-		long j = ds.getFileList(startPath, 0);
+		ds.getFileList(startPath, 0);
 		TreeSet<DirSizeElement> list = ds.getList();
 		Iterator<DirSizeElement> iter = list.descendingIterator();
 		while (iter.hasNext()) {
 			System.out.println(iter.next().getText());
 		}
-		
 	}
-
 }
