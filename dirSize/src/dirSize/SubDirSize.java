@@ -51,7 +51,6 @@ public class SubDirSize {
 				skipFile = true;
 			}
 			if (!skipFile) {
-				skipFile = false;
 				if (ignoreList.contains(curCanonicalPath)) {
 					System.out.println("Ignoring file in Ignore List "+curCanonicalPath);
 				} else {
@@ -70,7 +69,6 @@ public class SubDirSize {
 						} else {
 							canonPath = "";
 							for(File f : fileList) {
-								System.out.println(f);
 								try {
 									errString = "Getting CanonicalPath";
 									canonPath = f.getCanonicalPath();
