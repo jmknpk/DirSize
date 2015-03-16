@@ -10,6 +10,7 @@ public class DirSize {
 
 	public static void main (String[] args) {
 		SubDirSize ds = new SubDirSize();
+		System.out.println("Problem because this app is searching down links and libraries");
 		File abstractPath;
 		if (args != null && args.length > 0) {
 			abstractPath = new File(args[0]);
