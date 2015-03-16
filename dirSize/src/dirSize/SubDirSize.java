@@ -25,50 +25,129 @@ public class SubDirSize {
 	
 	public long getFileList(File curDir, long inSize) {
 		ArrayList<String> ignoreList = ig.getIgnoreList();
+		File curCanonicalPath = null;
+		boolean isDirectory = false;
+		boolean isFile = false;
+		String errString = "";
 		long accumulate = inSize;
-		try {
-			if (curDir == null) {
-				throw new NullPointerException();
-			} else {
-				if (ignoreList.contains(curDir.getCanonicalPath())) {
-					System.out.println("ignoring file "+curDir.getCanonicalPath());
+		boolean skipFile = false;
+		boolean ignore;
+		String canonPath;
+		boolean symbolic;
+		File[] fileList = null;
+		symbolic = false;
+		Long size = 0L;
+		if (curDir == null) {
+			throw new NullPointerException();
+		} else {
+			try {
+				errString="getting Canonical File";
+				curCanonicalPath = curDir.getCanonicalFile();
+				errString="getting isDirectory()";
+				isDirectory = curDir.isDirectory();
+			} catch (IOException e) {
+				System.err.println("Error DirSize.SubDirSize.getFileList(): "+errString);
+				System.out.println("Skipping problem file "+curDir);
+				skipFile = true;
+			}
+			if (!skipFile) {
+				skipFile = false;
+				if (ignoreList.contains(curCanonicalPath)) {
+					System.out.println("Ignoring file in Ignore List "+curCanonicalPath);
 				} else {
-						if (curDir.isDirectory()) {
-							File[] fileList = curDir.listFiles();
-							if (fileList == null) {
-								// no files to iterate on in this directory
-							} else {
-								for(File f : fileList){
-									if (ignoreList.contains(f.getCanonicalPath())) {
-										System.out.println("ignoring file "+f.getCanonicalPath());
+					if (isDirectory) {
+						skipFile = false;
+						try {
+							fileList = curDir.listFiles();
+						} catch (Exception e) {
+							System.err.println("Error DirSize.subDirSize.getFileList(): Getting list of files for directory.");
+							System.out.println("Skipping problem file "+curDir);
+							skipFile = true;
+						}
+						if (skipFile || fileList == null) {
+							skipFile = false;
+							// ignore this directory
+						} else {
+							canonPath = "";
+							for(File f : fileList) {
+								System.out.println(f);
+								try {
+									errString = "Getting CanonicalPath";
+									canonPath = f.getCanonicalPath();
+								} catch (IOException e) {
+									System.err.println("Error DirSize.subDirSize.getFileList(): "+errString);
+									System.out.println("Skipping problem file "+f);
+									skipFile = true;
+								}
+								if (skipFile) {
+									skipFile = false;
+									// do nothing
+								} else if (ignoreList.contains(canonPath)) {
+									System.out.println("Ignoring file in ignore List "+canonPath);
+								} else {
+									try {
+										errString = "getting isSymbolic attribute";
+										symbolic = (boolean) Files.getAttribute(f.toPath(),"basic:isSymbolicLink",LinkOption.NOFOLLOW_LINKS);
+									} catch (IOException e) {
+										System.err.println("Error DirSize.subDirSize.getFileList(): "+errString);
+										System.out.println("Skipping problem file "+canonPath);
+										skipFile = true;
+									}
+									if (skipFile) {
+										skipFile = false;
+										// do nothing
+									} else if (symbolic) {
+										System.out.println("ignoring symbolic link "+canonPath);
 									} else {
-										boolean symbolic = (boolean) Files.getAttribute(f.toPath(),"basic:isSymbolicLink",LinkOption.NOFOLLOW_LINKS);
-										if (symbolic) {
-											System.out.println("ignoring symbolic link "+f.getCanonicalPath());
-										} else if (!symbolic) {
-											if(f.isDirectory()) {
-												long dirSize = getFileList(f, 0);
-												list.add(new DirSizeElement(dirSize,"directory: "+SubDirSize.toPrettyString(dirSize)+" "+f.getCanonicalPath(),true));
-												accumulate = Math.addExact(accumulate, dirSize);
-											} else if(f.isFile()){
-												list.add(new DirSizeElement(Files.size(f.toPath()),"file: "+SubDirSize.toPrettyString(Files.size(f.toPath()))+" "+f.getCanonicalPath(),false));
-												accumulate = Math.addExact(accumulate,Files.size(f.toPath()));
+										try {
+											errString = "getting isDirectory()";
+											isDirectory = f.isDirectory();
+											isFile = f.isFile();
+										} catch (Exception e) {
+											System.err.println("Error DirSize.subDirSize.getFileList(): "+errString);
+											System.out.println("Skipping problem file"+canonPath);
+											skipFile = true;
+										}
+										if (skipFile) {
+											// do nothing
+										} else if(isDirectory) {
+											long dirSize = getFileList(f, 0);
+											list.add(new DirSizeElement(dirSize,"directory: "+SubDirSize.toPrettyString(dirSize)+" "+canonPath,true));
+											accumulate = Math.addExact(accumulate, dirSize);
+										} else if(isFile){
+											try {
+												errString = "f.toPath()";
+												size = Files.size(f.toPath());
+											} catch (IOException e) {
+												System.err.println("Error DirSize.subDirSize.getFileList(): "+errString);
+												System.out.println("Skipping problem file"+canonPath);
+												skipFile = true;
+											}
+											if (skipFile) {
 												
+											} else {
+												list.add(new DirSizeElement(size,"file: "+SubDirSize.toPrettyString(size)+" "+canonPath,false));
+												accumulate = Math.addExact(accumulate,size);
 											}
 										}
 									}
 								}
 							}
-						} else {
+						}
+					} else {
+						try {
 							list.add(new DirSizeElement(Files.size(curDir.toPath()),"file: "+SubDirSize.toPrettyString(Files.size(curDir.toPath()))+" "+curDir.getCanonicalPath(),false));
 							accumulate = Math.addExact(accumulate,Files.size(curDir.toPath()));
+						} catch (IOException e) {
+							errString = "adding non directory high file";
+							System.err.println("Error DirSize.subDirSize.getFileList(): "+errString);
+							System.out.println("Skipping problem file"+curDir);
 						}
+					}
 				}
 			}
-		} catch (IOException e) {
-			System.err.println("Error in SubDirSize");
-			e.printStackTrace();
 		}
+		
 		return accumulate;
 	}
 	
