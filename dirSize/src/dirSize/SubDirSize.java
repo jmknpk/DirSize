@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.TreeSet;
 import java.nio.file.LinkOption;
+import java.text.DecimalFormat;
+import java.lang.Math;
 
 public class SubDirSize {
 
@@ -32,24 +34,29 @@ public class SubDirSize {
 							System.out.println("ignoring symbolic link "+f.getCanonicalPath());
 						} else if (!symbolic) {
 							if(f.isDirectory()) {
-								long dirSize = getFileList(f, accumulate);
-								list.add(new DirSizeElement(dirSize,"directory: "+Long.toString(dirSize)+" "+f.getCanonicalPath(),true));
-								accumulate = accumulate + dirSize;
+								long dirSize = getFileList(f, 0);
+								list.add(new DirSizeElement(dirSize,"directory: "+SubDirSize.toPrettyString(dirSize)+" "+f.getCanonicalPath(),true));
+								accumulate = Math.addExact(accumulate, dirSize);
 							} else if(f.isFile()){
-								list.add(new DirSizeElement(Files.size(f.toPath()),"file: "+Long.toString(Files.size(f.toPath()))+" "+f.getCanonicalPath(),false));
-								accumulate = accumulate + Files.size(f.toPath());
+								list.add(new DirSizeElement(Files.size(f.toPath()),"file: "+SubDirSize.toPrettyString(Files.size(f.toPath()))+" "+f.getCanonicalPath(),false));
+								accumulate = Math.addExact(accumulate,Files.size(f.toPath()));
 								
 							}
 						}
 					}
 				}
 			} else {
-				list.add(new DirSizeElement(Files.size(curDir.toPath()),"file: "+Long.toString(Files.size(curDir.toPath()))+" "+curDir.getCanonicalPath(),false));
-				accumulate = accumulate + Files.size(curDir.toPath());
+				list.add(new DirSizeElement(Files.size(curDir.toPath()),"file: "+SubDirSize.toPrettyString(Files.size(curDir.toPath()))+" "+curDir.getCanonicalPath(),false));
+				accumulate = Math.addExact(accumulate,Files.size(curDir.toPath()));
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 		return accumulate;
+	}
+	
+	public static String toPrettyString(long in) {
+		DecimalFormat formatter = new DecimalFormat("###,###,###,###,###,###,###");
+		return formatter.format(in);
 	}
 }
